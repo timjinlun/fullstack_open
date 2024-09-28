@@ -1,0 +1,55 @@
+DELETE http://localhost:3002/api/persons/3
+
+###
+POST http://localhost:3002/api/persons/ HTTP/1.1
+content-type: application/json
+
+{
+    "name": "Sample",
+    "number": "333-444"
+}
+
+### Test Missing number
+POST http://localhost:3002/api/persons/ HTTP/1.1
+content-type: application/json
+
+{
+    "name": "Sample2",
+    "number": ""
+}
+
+### Test Missing Name
+POST http://localhost:3002/api/persons/ HTTP/1.1
+content-type: application/json
+
+{
+    "name": "",
+    "number": "33-44-55-66"
+}
+
+### Test Missing both name and number
+POST http://localhost:3002/api/persons/ HTTP/1.1
+content-type: application/json
+
+{
+    "name": "",
+    "number": ""
+}
+
+### 
+POST http://localhost:3002/api/persons/ HTTP/1.1
+content-type: application/json
+
+{
+    "name": "Sample2",
+    "number": "33-44-55-66"
+}
+
+### Test existed name.
+POST http://localhost:3002/api/persons/ HTTP/1.1
+content-type: application/json
+
+{
+    "name": "Sample2",
+    "number": "33-44-55-66"
+}
