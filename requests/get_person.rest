@@ -1,0 +1,46 @@
+GET http://localhost:3001/api/persons/1
+
+### Receive 400 bad Request
+GET  http://localhost:3001/api/persons/5
+
+### Get Info
+GET http://localhost:3001/info
+
+
+
+### Delete an exist person from phonebook
+DELETE http://localhost:3001/api/persons/1
+
+### Delete a non-exist person from phonebook
+DELETE http://localhost:3001/api/persons/300
+
+###
+GET http://localhost:3001/api/persons
+
+### Post a complete contact to the phonebook 
+POST http://localhost:3001/api/persons
+Content-Type: application/json
+
+{
+    "name": "Tim",
+    "number": "123-456-78"
+}
+
+### Post a incomplete contact to the phonebook
+POST http://localhost:3001/api/persons
+Content-Type: application/json
+
+{
+    "name": "Tim",
+    "number": ""
+}
+
+
+### Post a contact with duplicate name to the phonebook
+POST http://localhost:3001/api/persons
+Content-Type: application/json
+
+{
+    "name": "Tim",
+    "number": "123-456-78"
+}
