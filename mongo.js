@@ -1,43 +1,54 @@
 const mongoose = require('mongoose')
 
-if (process.argv.length<3) {
-  console.log('give password as argument')
-  process.exit(1)
-}
+// 如果没有填写登陆密码，则报错
+
 
 const password = process.argv[2]
 
 const url =
-`mongodb+srv://timjinlun-pb:149325@phonebook-db.3m5dq.mongodb.net/phonebookApp?retryWrites=true&w=majority&appName=phonebook-db`
+`mongodb+srv://timjinlun-pb:${password}@phonebook-db.3m5dq.mongodb.net/phonebookApp?retryWrites=true&w=majority&appName=phonebook-db`
 mongoose.set('strictQuery',false)
 
 mongoose.connect(url)
 
 
-
-const phonebookSchema = new mongoose.Schema({
-  content: String,
-  important: Boolean,
+const contactSchema = new mongoose.Schema({
+  name: String,
+  number: String,
 })
 
 // Create a Note model
-const Note = mongoose.model('Note', noteSchema)
+const Contact = mongoose.model('Contact', contactSchema)
 
 
-// Using Note model to construct new notes that are JavaScript objects based.
-// const note = new Note({
-//   content: 'HTML is easy',
-//   important: true,
-// })
-
-Note.find({}).then(result => {
-  result.forEach(note => {
-    console.log(note)
-  })
-  mongoose.connection.close()
+const contact = new Contact({
+  name: process.argv[3],
+  number: process.argv[4],
 })
 
-// note.save().then(result => {
-//   console.log('note saved!')
-//   mongoose.connection.close()
-// })
+// 如果命令行参数少于3个，即缺少密码，则报错
+if (process.argv.length<3){
+  console.log('give password as argument');
+  process.exit(1)
+} 
+// 如果密码是仅有的参数，则返回当前储存在phonebook的所有contact
+else if(process.argv.length==3){
+  Contact.find({}).then(result =>{
+    console.log(`phonebook:`)
+    result.forEach(contact => {
+      console.log(`${contact.name} ${contact.number}`)
+    })
+    mongoose.connection.close()
+    process.exit(1)
+  })
+  // 多于三个参数则按照添加contact的规则，将参数中的内容添加至phonebook。
+} else{
+  contact.save().then(result => {
+    console.log(
+      `added ${process.argv[3]} number ${process.argv[4]} to phonebook`
+    );
+    mongoose.connection.close()
+    process.exit(1)
+  })  
+}
+
