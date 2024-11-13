@@ -1,8 +1,6 @@
 const mongoose = require('mongoose')
 
-// 如果没有填写登陆密码，则报错
-
-
+// 将命令行的第三个参数作为密码
 const password = process.argv[2]
 
 const url =
@@ -12,16 +10,16 @@ mongoose.set('strictQuery',false)
 mongoose.connect(url)
 
 
-const contactSchema = new mongoose.Schema({
+const PersonSchema = new mongoose.Schema({
   name: String,
   number: String,
 })
 
 // Create a Note model
-const Contact = mongoose.model('Contact', contactSchema)
+const Person = mongoose.model('Person', PersonSchema)
 
 
-const contact = new Contact({
+const person = new Person({
   name: process.argv[3],
   number: process.argv[4],
 })
@@ -33,17 +31,17 @@ if (process.argv.length<3){
 } 
 // 如果密码是仅有的参数，则返回当前储存在phonebook的所有contact
 else if(process.argv.length==3){
-  Contact.find({}).then(result =>{
+  Person.find({}).then(result =>{
     console.log(`phonebook:`)
-    result.forEach(contact => {
-      console.log(`${contact.name} ${contact.number}`)
+    result.forEach(person => {
+      console.log(`${person.name} ${person.number}`)
     })
     mongoose.connection.close()
     process.exit(1)
   })
   // 多于三个参数则按照添加contact的规则，将参数中的内容添加至phonebook。
 } else{
-  contact.save().then(result => {
+  person.save().then(result => {
     console.log(
       `added ${process.argv[3]} number ${process.argv[4]} to phonebook`
     );

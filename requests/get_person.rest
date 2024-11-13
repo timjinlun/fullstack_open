@@ -1,30 +1,31 @@
-GET http://localhost:3001/api/persons/1
+GET http://localhost:3001/api/persons/6732b8e4834970fc69b95f7f
 
-### Receive 400 bad Request
+### Receive error message 
 GET  http://localhost:3001/api/persons/5
 
 ### Get Info
 GET http://localhost:3001/info
 
+###
+GET http://localhost:3001/api/persons
 
 
 ### Delete an exist person from phonebook
-DELETE http://localhost:3001/api/persons/1
+DELETE http://localhost:3001/api/persons/6732b8c65e75fa228969ba2e
 
 ### Delete a non-exist person from phonebook
-DELETE http://localhost:3001/api/persons/300
+DELETE http://localhost:3001/api/persons/1
 
-###
-GET http://localhost:3001/api/persons
 
 ### Post a complete contact to the phonebook 
 POST http://localhost:3001/api/persons
 Content-Type: application/json
 
 {
-    "name": "Tim",
-    "number": "123-456-78"
+    "name": "Tim Song",
+    "number": "123-456-78909"
 }
+
 
 ### Post a incomplete contact to the phonebook
 POST http://localhost:3001/api/persons
@@ -43,4 +44,23 @@ Content-Type: application/json
 {
     "name": "Tim",
     "number": "123-456-78"
+}
+
+### Update an existing person in the phonebook
+PUT http://localhost:3001/api/persons/673423dfe682c343332f7c14
+Content-Type: application/json
+
+{
+    "name": "Tim Song",
+    "number": "987-654-32123"
+}
+
+
+### Post a contact with duplicate name to the phonebook
+PUT http://localhost:3001/api/persons
+Content-Type: application/json
+
+{
+    "name": "Tim",
+    "number": "123-456-447668"
 }

@@ -1,149 +1,211 @@
 const express = require('express')
-const morgan = require('morgan')
-
 const app = express()
+require('dotenv').config()
 
-app.use(express.json())
+// 加载phonebook model
+const Person = require('./models/phonebook')
+
+// 调用前端的`dist`文件
+app.use(express.static('dist'));
 
 
+// 调用logger
+const morgan = require('morgan')
 // 设定一个新的token reqObj
 morgan.token('reqObj', (req, res) => {
     return JSON.stringify(req.body)
 })
 
-app.use(morgan(':method :url :status :req[content-length] - :response-time ms :reqObj'))
+// cross-origin-resource-sharing
+const cors = require('cors')
+
 
 // cross-origin resources sharing
-const cors = require('cors')
 app.use(cors())
+app.use(express.json())
+app.use(morgan(':method :url :status :req[content-length] - :response-time ms :reqObj'))
 
-// 调用前端的`dist`文件
-app.use(express.static('dist'));
+
+
+const unknownEndpoint = (request, response) => {
+    response.status(404).send({ error: 'unknown endpoint' })
+}
+
 
 /**
- * Http Method + routes + status code + 
+ * 
+ * @param {*} error 
+ * @param {*} request 
+ * @param {*} response 
+ * @param {*} next 
+ * @returns 
  */
-
-let phonebook = 
-[
-    { 
-      "id": "1",
-      "name": "Arto Hellas", 
-      "number": "040-123456"
-    },
-    { 
-      "id": "2",
-      "name": "Ada Lovelace", 
-      "number": "39-44-5323523"
-    },
-    { 
-      "id": "3",
-      "name": "Dan Abramov", 
-      "number": "12-43-234345"
-    },
-    { 
-      "id": "4",
-      "name": "Mary Poppendieck", 
-      "number": "39-23-6423122"
-    }
-]
+const errorHandler = (error, request, response, next) => {
+    console.error(error.message)
+    if (error.name === 'CastError') {
+      return response.status(400).send({ error: 'malformatted id' })
+    } 
+    next(error)
+}
 
 
+
+/**
+ * 通过`/api/persons`获取所有的人员信息
+ */
 app.get('/api/persons/', (request, response) => {
-    response.json(phonebook)
+    Person.find({}).then(people => {
+        console.log("All the person object in phonebook:", people);
+        response.json(people)
+    })
 })
 
+
+
+/**
+ * 通过`/info`获取人员信息的总数
+ */
 app.get('/info', (request, response) => {
-    const length = phonebook.length;
-    response.send(`Phonebook has info for ${length} people <br> ${new Date()}`)
+    Person.find({})
+    .then(persons => {
+        console.log("Number of People:", persons.length);
+        const currentTimestamp = new Date().toLocaleString();
+        response.send(`Phonebook has info for ${persons.length} people\n${currentTimestamp}`)
+    })
+    .catch(error => {
+        console.log("Get unsuccessfully, ", error.message);
+        
+        response.status(500).send({ error: "server error"})
+    })
 })
 
+
+/**
+ * 通过`/api/persons/:id`获取指定id的人员信息
+ */
 app.get('/api/persons/:id', (request, response) => {
-    const id = request.params.id
-    const person = phonebook.find(person => person.id === id)
-    if (person){
-        response.json(person)
-    } else {
-        response.status(400).end()
-    }
+    const idNum = request.params.id;
+    console.log("The id you want to get is: ", idNum);
+    Person.findById(idNum).then(person => {
+        if (person) {
+            console.log("The person is: ", person);
+            response.json(person);
+        } else {
+            console.log(`Person with id ${idNum} not found`);
+            response.status(404).send({ error: `Person with id ${idNum} not found` });
+        }
+    })
+    .catch(error => {
+        console.log("Get unsuccessfully,", error.message);
+        response.status(500).send({ error: 'Server error' });
+    })
 })
 
 
-const generateId = () => {
-    const maxId = phonebook.length > 0
-    ? Math.max(...phonebook.map(person => Number(person.id)))
-    :0
-    return String(maxId + 1)
-}
+// const generateId = () => {
+//     const maxId = phonebook.length > 0
+//     ? Math.max(...phonebook.map(person => Number(person.id)))
+//     :0
+//     return String(maxId + 1)
+// }
 
-const generateRandomId = () => {
-    const Max = 10000
-    const Min = 100
-    const id = phonebook.length > 0
-    ? Min + Math.floor(Math.random() * (Max - Min) + 1)
-    : 0
-    return String(id)
-}
+// const generateRandomId = () => {
+//     const Max = 10000
+//     const Min = 100
+//     const id = phonebook.length > 0
+//     ? Min + Math.floor(Math.random() * (Max - Min) + 1)
+//     : 0
+//     return String(id)
+// }
 
 
-app.delete('/api/persons/:id', (request, response) => {
-    console.log("The phonebook before is: ", phonebook);
-    
-    // Get the id from the request
-    const id = request.params.id
 
-    // Check if the id exists in the phonebook
-    const person = phonebook.find(person => person.id === id)
-    
-    // if true, delete the designated person.
-    if (person){
-        phonebook = phonebook.filter(person => person.id !== id)
-        response.status(404).json({
-            message: `Note ${id} has been deleted.`
+/**
+ * 通过`/api/persons/:id`删除指定id的人员信息
+ */
+app.delete('/api/persons/:id', (request, response, next) => {
+    console.log("The ID you want to delete is: ", request.params.id)
+    Person.findByIdAndDelete(request.params.id)
+        .then(result => {
+            console.log(result);
+            response.status(204).end()
         })
-    // else, raise a warning.
-    } else{
-        response.status(404).json({
-            error: "No such a person exist in the phonebook."
-        })
-    }
-    console.log("After the phonebook is: ", phonebook)
-     
+        .catch(error => next(error))
 })
 
 
+
+/**
+ * 通过`/api/persons`添加新的人员信息
+ */
 app.post('/api/persons', (request, response) => {
-    // console.log(request.params.body);
-    // console.log(request);
-    console.log(request.body);
 
     const body = request.body
-    
-    if (!body.name || ! body.number) {
-        response.status(404).json({
-            message: "content missing. Whether name or number"
+    console.log(request.body);
+
+    if (body.name===undefined || body.number===undefined) {
+        response.status(400).json({
+            message: "content missing. Whether name or number."
         })
     } 
-
     // Check if the name already exists in the phonebook
-    if (phonebook.find(person => person.name === body.name)){
+    if (body.name == Person.find({name: body.name})){
+        console.log("You want to add: ", body.name);
+        console.log("Already in the data: ", Person.find({name: body.name}));
         response.status(404).json({
-            message: "Name must be unique"
+            message: "Name must be unique."
         })
     }
-
-    const person = {
+    const person = new Person({
         name : body.name, 
         number : body.number,
-        id : generateRandomId()
-    }
-    phonebook = phonebook.concat(person)
-    response.json(person)
-    
+    })
+    person.save().then(savedPerson =>{
+        response.json(savedPerson)
+    })
 })
 
 
-const PORT = process.env.PORT || 3001
+app.put('/api/persons/:id', (request, response, next) => {
+    const body = request.body
+    console.log("The request body is: ", body);
+
+    const idNum = request.params.id;
+    console.log("The id is: ", idNum);
+
+    const person = {
+        name: body.name,
+        number: body.number
+    }
+    console.log("The person object is: ", person);
+ // Check if a person with the same name already exists in the database
+    Person.findOne({ name: person.name })
+        .then(existingPerson => {
+            if (existingPerson && existingPerson._id.toString() !== idNum) {
+                // If a person with the same name exists but with a different ID, return an error
+                return response.status(400).json({ error: 'Name must be unique' });
+            }
+
+            // Update the entry if no duplicate name is found
+            return Person.findByIdAndUpdate(idNum, person, { new: true })
+        })
+        .then(updatedPerson => {
+            if (updatedPerson) {
+                response.json(updatedPerson);
+            } else {
+                // If no person was found with that ID, handle as needed (e.g., error or creation)
+                response.status(404).end();
+            }
+        })
+        .catch(error => next(error));
+})
+
+
+app.use(unknownEndpoint)
+app.use(errorHandler)
+
+
+const PORT = process.env.PORT
 app.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`)
 })
