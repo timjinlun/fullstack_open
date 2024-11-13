@@ -20,18 +20,32 @@ morgan.token('reqObj', (req, res) => {
 const cors = require('cors')
 
 
-// cross-origin resources sharing
+// active cross-origin resources sharing middleware
 app.use(cors())
+// active express.json() middleware that parses incoming requests with JSON payloads
 app.use(express.json())
+// active morgan middleware that logs requests to the console
 app.use(morgan(':method :url :status :req[content-length] - :response-time ms :reqObj'))
 
 
-
+/**
+ * Middleware to handle unknown endpoints.
+ * @param {Object} request HTTP request object.
+ * @param {Object} response HTTP response object.
+ */
 const unknownEndpoint = (request, response) => {
     response.status(404).send({ error: 'unknown endpoint' })
 }
 
 
+/**
+ * Middleware to handle errors in the application.
+ *
+ * @param {Object} error - The error object.
+ * @param {Object} request - The HTTP request object.
+ * @param {Object} response - The HTTP response object.
+ * @param {Function} next - The next middleware function.
+ */
 const errorHandler = (error, request, response, next) => {
     console.error(error.message)
     if (error.name === 'CastError') {
@@ -95,6 +109,14 @@ app.get('/api/persons/:id', (request, response) => {
     })
 })
 
+
+/**
+ * 通过`/api/persons`添加人员信息, 人员信息的格式如下:
+ * {
+ *    "name": "Alice", 
+ *   "number": "123-12345678" // the format of the number is either 123-12345678 or 12-1234567 digits
+ * }
+ */
 app.post('/api/persons', (request, response, next) => {
 
     const body = request.body
@@ -108,6 +130,7 @@ app.post('/api/persons', (request, response, next) => {
             message: "Name must be unique."
         })
     }
+
     const person = new Person({
         name : body.name, 
         number : body.number,
@@ -116,10 +139,12 @@ app.post('/api/persons', (request, response, next) => {
         response.json(savedPerson)
     })
     .catch(error => next(error))
-})
+})      
 
 
-
+/**
+ * 通过`/api/persons/:id`更新指定id的人员信息
+ */
 app.put('/api/persons/:id', (request, response, next) => {
     const { id } = request.params;
     const { name, number } = request.body;
