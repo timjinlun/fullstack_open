@@ -32,14 +32,9 @@ const unknownEndpoint = (request, response) => {
 }
 
 
-/**
- * 
- * @param {*} error 
- * @param {*} request 
- * @param {*} response 
- * @param {*} next 
- * @returns 
- */
+
+
+
 const errorHandler = (error, request, response, next) => {
     console.error(error.message)
     if (error.name === 'CastError') {
@@ -101,43 +96,6 @@ app.get('/api/persons/:id', (request, response) => {
     })
 })
 
-
-// const generateId = () => {
-//     const maxId = phonebook.length > 0
-//     ? Math.max(...phonebook.map(person => Number(person.id)))
-//     :0
-//     return String(maxId + 1)
-// }
-
-// const generateRandomId = () => {
-//     const Max = 10000
-//     const Min = 100
-//     const id = phonebook.length > 0
-//     ? Min + Math.floor(Math.random() * (Max - Min) + 1)
-//     : 0
-//     return String(id)
-// }
-
-
-
-/**
- * 通过`/api/persons/:id`删除指定id的人员信息
- */
-app.delete('/api/persons/:id', (request, response, next) => {
-    console.log("The ID you want to delete is: ", request.params.id)
-    Person.findByIdAndDelete(request.params.id)
-        .then(result => {
-            console.log(result);
-            response.status(204).end()
-        })
-        .catch(error => next(error))
-})
-
-
-
-/**
- * 通过`/api/persons`添加新的人员信息
- */
 app.post('/api/persons', (request, response) => {
 
     const body = request.body
@@ -166,39 +124,44 @@ app.post('/api/persons', (request, response) => {
 })
 
 
+
 app.put('/api/persons/:id', (request, response, next) => {
-    const body = request.body
-    console.log("The request body is: ", body);
+    const { id } = request.params;
+    const { name, number } = request.body;
 
-    const idNum = request.params.id;
-    console.log("The id is: ", idNum);
-
-    const person = {
-        name: body.name,
-        number: body.number
-    }
-    console.log("The person object is: ", person);
- // Check if a person with the same name already exists in the database
-    Person.findOne({ name: person.name })
-        .then(existingPerson => {
-            if (existingPerson && existingPerson._id.toString() !== idNum) {
-                // If a person with the same name exists but with a different ID, return an error
-                return response.status(400).json({ error: 'Name must be unique' });
-            }
-
-            // Update the entry if no duplicate name is found
-            return Person.findByIdAndUpdate(idNum, person, { new: true })
-        })
+    Person.findByIdAndUpdate(
+        id,
+        { name, number },
+        { new: true, runValidators: true, context: 'query' }
+    )
         .then(updatedPerson => {
             if (updatedPerson) {
                 response.json(updatedPerson);
             } else {
-                // If no person was found with that ID, handle as needed (e.g., error or creation)
-                response.status(404).end();
+                response.status(404).send({ error: 'Person not found' });
             }
         })
         .catch(error => next(error));
+});
+
+
+/**
+ * 通过`/api/persons/:id`删除指定id的人员信息
+ */
+app.delete('/api/persons/:id', (request, response, next) => {
+    console.log("The ID you want to delete is: ", request.params.id)
+    Person.findByIdAndDelete(request.params.id)
+        .then(result => {
+            console.log(result);
+            response.status(204).end()
+        })
+        .catch(error => next(error))
 })
+
+
+
+
+
 
 
 app.use(unknownEndpoint)
