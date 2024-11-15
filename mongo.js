@@ -32,7 +32,7 @@ if (process.argv.length<3){
 // 如果密码是仅有的参数，则返回当前储存在phonebook的所有contact
 else if(process.argv.length==3){
   Person.find({}).then(result =>{
-    console.log(`phonebook:`)
+    console.log('phonebook:')
     result.forEach(person => {
       console.log(`${person.name} ${person.number}`)
     })
@@ -44,7 +44,7 @@ else if(process.argv.length==3){
   person.save().then(result => {
     console.log(
       `added ${process.argv[3]} number ${process.argv[4]} to phonebook`
-    );
+    )
     mongoose.connection.close()
     process.exit(1)
   })  
